@@ -11,6 +11,7 @@ import numpy as np
 from selenium import webdriver
 from bs4 import BeautifulSoup as bs
 from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import NoSuchElementException
 
 from vcode import Captcha
 from notify import min_date
@@ -110,48 +111,56 @@ def f_visa(driver, driver2):
     for i in range(len(name)):
         n = name[i] + '-' + cur
         n2 = name[i] + '2-' + cur
-        driver.get(base_url + '/SelectPost')
-        driver.find_element_by_id(
-            "j_id0:SiteTemplate:j_id112:j_id165:{}".format(i)).click()
-        driver.find_element_by_name(
-            "j_id0:SiteTemplate:j_id112:j_id169").click()
-        driver.find_element_by_id(
-            "j_id0:SiteTemplate:j_id109:j_id162:1").click()
-        driver.find_element_by_name(
-            "j_id0:SiteTemplate:j_id109:j_id166").click()
-        driver.find_element_by_id("selectedVisaClass").click()
-        driver.find_element_by_name(
-            "j_id0:SiteTemplate:theForm:j_id178").click()
-        result = bs(driver.page_source, 'html.parser').findAll(
-            class_='leftPanelText')
-        if len(result):
-            result = result[0].text.split()[1:]
-        s[n] = s[n2] = postprocess(result)
-        if s[n] != '/':
-            path = 'F/' + n.replace('-', '/')
-            os.makedirs('/'.join(path.split('/')[:-1]), exist_ok=True)
-            open(path, 'a+').write(s['time'].split(' ')
-                                   [-1] + ' ' + s[n] + '\n')
+        def clicks():
+            driver.get(base_url + '/SelectPost')
+            driver.find_element_by_id(
+                "j_id0:SiteTemplate:j_id112:j_id165:{}".format(i)).click()
+            driver.find_element_by_name(
+                "j_id0:SiteTemplate:j_id112:j_id169").click()
+            driver.find_element_by_id(
+                "j_id0:SiteTemplate:j_id109:j_id162:1").click()
+            driver.find_element_by_name(
+                "j_id0:SiteTemplate:j_id109:j_id166").click()
+            driver.find_element_by_id("selectedVisaClass").click()
+            driver.find_element_by_name(
+                "j_id0:SiteTemplate:theForm:j_id178").click()
+            result = bs(driver.page_source, 'html.parser').findAll(
+                class_='leftPanelText')
+            if len(result):
+                result = result[0].text.split()[1:]
+            s[n] = s[n2] = postprocess(result)
+            if s[n] != '/':
+                path = 'F/' + n.replace('-', '/')
+                os.makedirs('/'.join(path.split('/')[:-1]), exist_ok=True)
+                open(path, 'a+').write(s['time'].split(' ')
+                                    [-1] + ' ' + s[n] + '\n')
+        while True:
+            try:
+                clicks()
+                break
+            except NoSuchElementException:
+                print("Retrying")
+
         print('F1/J1', n, s[n])
 
-    driver2.get(base_url + '/SelectVisaCategory')
-    driver2.find_element_by_id("j_id0:SiteTemplate:j_id109:j_id162:0").click()
-    driver2.find_element_by_name("j_id0:SiteTemplate:j_id109:j_id166").click()
-    driver2.find_element_by_id("selectedVisaClass").click()
-    driver2.find_element_by_name("j_id0:SiteTemplate:theForm:j_id178").click()
-    n = '香港' + '-' + cur
-    n2 = '香港' + '2-' + cur
-    result = bs(driver2.page_source, 'html.parser').findAll(
-        class_='leftPanelText')
-    if len(result):
-        result = result[0].text.split()[1:]
-    s[n] = s[n2] = postprocess(result)
-    if s[n] != '/':
-        path = 'F/' + n.replace('-', '/')
-        os.makedirs('/'.join(path.split('/')[:-1]), exist_ok=True)
-        open(path, 'a+').write(s['time'].split(' ')
-                               [-1] + ' ' + s[n] + '\n')
-    print('F1/J1', n, s[n])
+    # driver2.get(base_url + '/SelectVisaCategory')
+    # driver2.find_element_by_id("j_id0:SiteTemplate:j_id109:j_id162:0").click()
+    # driver2.find_element_by_name("j_id0:SiteTemplate:j_id109:j_id166").click()
+    # driver2.find_element_by_id("selectedVisaClass").click()
+    # driver2.find_element_by_name("j_id0:SiteTemplate:theForm:j_id178").click()
+    # n = '香港' + '-' + cur
+    # n2 = '香港' + '2-' + cur
+    # result = bs(driver2.page_source, 'html.parser').findAll(
+    #     class_='leftPanelText')
+    # if len(result):
+    #     result = result[0].text.split()[1:]
+    # s[n] = s[n2] = postprocess(result)
+    # if s[n] != '/':
+    #     path = 'F/' + n.replace('-', '/')
+    #     os.makedirs('/'.join(path.split('/')[:-1]), exist_ok=True)
+    #     open(path, 'a+').write(s['time'].split(' ')
+    #                            [-1] + ' ' + s[n] + '\n')
+    # print('F1/J1', n, s[n])
     merge('../visa/visa.json', s, cur)
 
 
@@ -389,18 +398,18 @@ def l_visa(driver, driver2):
 
 
 def main(driver, driver2, cracker):
-    open('state', 'w').write('Login Hong Kong')
-    login(driver2, cracker,
-          '/SiteRegister?country=Hong%20Kong&language=zh_CN', 'Hong Kong')
-    driver2.get(base_url + '/selectvisatype')
-    driver2.find_element_by_id("j_id0:SiteTemplate:theForm:ttip:1").click()
-    while True:
-        try:
-            driver2.find_element_by_xpath("//div[3]/div/a/span").click()
-            break
-        except:
-            time.sleep(1)
-    driver2.find_element_by_name("j_id0:SiteTemplate:theForm:j_id176").click()
+    # open('state', 'w').write('Login Hong Kong')
+    # login(driver2, cracker,
+    #       '/SiteRegister?country=Hong%20Kong&language=zh_CN', 'Hong Kong')
+    # driver2.get(base_url + '/selectvisatype')
+    # driver2.find_element_by_id("j_id0:SiteTemplate:theForm:ttip:1").click()
+    # while True:
+    #     try:
+    #         driver2.find_element_by_xpath("//div[3]/div/a/span").click()
+    #         break
+    #     except:
+    #         time.sleep(1)
+    # driver2.find_element_by_name("j_id0:SiteTemplate:theForm:j_id176").click()
     open('state', 'w').write('Login China Mainland')
     login(driver, cracker,
           '/SiteRegister?country=China&language=zh_CN', 'China Mainland')
@@ -410,31 +419,31 @@ def main(driver, driver2, cracker):
         cnt += 1
         open('state', 'w').write('F1/J1 Visa Status Sync')
         f_visa(driver, driver2)
-        os.system('python3 notify.py --type F &')
-    prob = float(open('b_prob').read()) if os.path.exists('b_prob') else 1
-    if np.random.rand() < prob and cnt < 4:
-        cnt += 1
-        open('state', 'w').write('B1/B2 Visa Status Sync')
-        b_visa(driver, driver2)
-        os.system('python3 notify.py --type B &')
-    prob = float(open('h_prob').read()) if os.path.exists('h_prob') else 1
-    if np.random.rand() < prob and cnt < 4:
-        cnt += 1
-        open('state', 'w').write('H1B Visa Status Sync')
-        h_visa(driver, driver2)
-        os.system('python3 notify.py --type H &')
-    prob = float(open('o_prob').read()) if os.path.exists('o_prob') else 1
-    if np.random.rand() <= prob and cnt < 4:
-        cnt += 1
-        open('state', 'w').write('O1/O2/O3 Visa Status Sync')
-        o_visa(driver, driver2)
-        os.system('python3 notify.py --type O &')
-    prob = float(open('l_prob').read()) if os.path.exists('l_prob') else 1
-    if np.random.rand() <= prob and cnt < 4:
-        cnt += 1
-        open('state', 'w').write('L1/L2 Visa Status Sync')
-        l_visa(driver, driver2)
-        os.system('python3 notify.py --type L &')
+        # os.system('python notify.py --type F &')
+    # prob = float(open('b_prob').read()) if os.path.exists('b_prob') else 1
+    # if np.random.rand() < prob and cnt < 4:
+    #     cnt += 1
+    #     open('state', 'w').write('B1/B2 Visa Status Sync')
+    #     b_visa(driver, driver2)
+    #     os.system('python notify.py --type B &')
+    # prob = float(open('h_prob').read()) if os.path.exists('h_prob') else 1
+    # if np.random.rand() < prob and cnt < 4:
+    #     cnt += 1
+    #     open('state', 'w').write('H1B Visa Status Sync')
+    #     h_visa(driver, driver2)
+    #     os.system('python notify.py --type H &')
+    # prob = float(open('o_prob').read()) if os.path.exists('o_prob') else 1
+    # if np.random.rand() <= prob and cnt < 4:
+    #     cnt += 1
+    #     open('state', 'w').write('O1/O2/O3 Visa Status Sync')
+    #     o_visa(driver, driver2)
+    #     os.system('python notify.py --type O &')
+    # prob = float(open('l_prob').read()) if os.path.exists('l_prob') else 1
+    # if np.random.rand() <= prob and cnt < 4:
+    #     cnt += 1
+    #     open('state', 'w').write('L1/L2 Visa Status Sync')
+    #     l_visa(driver, driver2)
+    #     os.system('python notify.py --type L &')
     driver.quit()
     driver2.quit()
     time.sleep(int(open('time').read()))
